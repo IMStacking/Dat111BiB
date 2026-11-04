@@ -23,7 +23,13 @@ def draw_the_map():
 
     ax_map.text(x + 3, y - 1, price, color='blue', fontsize=15)
     ax_history.cla()
-    ax_history.bar(m2list, price_m2, color='blue', width=5)
+    standard_colors = {
+        1: 'red', #Dårlig
+        2: 'yellow', #Middels
+        3: 'green', #God
+    }
+    bar_color = standard_colors.get(standard_type)
+    ax_history.bar(m2list, price_m2, color=bar_color, width=5)
     ax_history.legend(["pris per m2"])
 
     plt.draw()
