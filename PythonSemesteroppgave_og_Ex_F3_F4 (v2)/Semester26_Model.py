@@ -9,31 +9,41 @@ from sklearn.linear_model import LinearRegression, Ridge, RidgeCV
 from sklearn.metrics import r2_score, mean_absolute_error
 
 def build_and_train_model():
-    global model
-    data_file = Path(__file__).resolve().parent / "House_Prices.csv"
-    df:DataFrame = pd.read_csv(data_file)
+    global model, poly
 
-    # --- Load your data ---
-    Y = df["sales_price"].values
-    X = df[y_columns]
+    data_file = Path(__file__).resolve().parent / "House_Prices.csv"
+    df = pd.read_csv(data_file)
+
+    y = df["sales_price"]
+    X = df[y_columns].copy()
     X["x2"] = X["x"] ** 1.5
     X["y2"] = X["y"] ** 1.5
 
-    # --- Polynomial expansion ---
-    X_poly = poly.fit_transform(X)
-    x_train, x_test, y_train, y_test = train_test_split(X_poly, Y, test_size=0.25, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.25, random_state=42)
 
-    model.fit(x_train, y_train)
-    y_pred = model.predict(x_test).astype(int)
+    best_mae = float("inf")
+    best_degree = None
 
-    # Check model quality
-    l_test:list[int] = y_test.tolist()
-    l_pred:list[int] = y_pred.tolist()
-    for i in range(0, min(len(l_test),10)):
-        print(f"Price: {l_test[i]:>10,.0f}  Predicted: {l_pred[i]:>10,.0f}")
-    print(f"R-squared: {r2_score(y_test, y_pred):.2f}")
-    print(f"MAE      : {mean_absolute_error(y_test, y_pred):.0f}")
+    for degree in (1, 2, 3):
+        candidate_poly = PolynomialFeatures(degree=degree, include_bias=False)
+        X_train_poly = candidate_poly.fit_transform(X_train)
+        X_val_poly = candidate_poly.transform(X_val)
 
+        candidate_model = LinearRegression()
+        candidate_model.fit(X_train_poly, y_train)
+        y_pred = candidate_model.predict(X_val_poly)
+
+        mae = mean_absolute_error(y_val, y_pred)
+        r2 = r2_score(y_val, y_pred)
+        print(f"Grad {degree} | MAE: {mae:,.2f} | R²: {r2:.3f}")
+
+        if mae < best_mae:
+            best_mae = mae
+            best_degree = degree
+            model = candidate_model
+            poly = candidate_poly
+
+    print(f"Best av de tre: grad {best_degree} (MAE: {best_mae:,.2f})")
 def predict_price(x, y, m2:int,house_type, standard) -> float:
     # Build a single sample
     x_house = pd.DataFrame([[x, y,m2,house_type,standard]],columns=y_columns)
