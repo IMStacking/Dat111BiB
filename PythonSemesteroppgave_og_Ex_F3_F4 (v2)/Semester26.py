@@ -20,7 +20,7 @@ def draw_the_map():
 
     m2list = [50, 100, 150, 200]
     price_m2 = [
-        predict_price(x, y, _m2, house_type, standard_type) / _m2
+        predict_price(x, y, _m2, house_type, standard_type) * 1000 / _m2
         for _m2 in m2list
     ]
 
@@ -41,6 +41,7 @@ def draw_the_map():
     )
     ax_history.set_axisbelow(True)
     ax_history.grid(axis='y', linestyle=':', alpha=0.5)
+    ax_history.set_ylabel("kr/m²")
     ax_history.legend()
 
     plt.draw()
